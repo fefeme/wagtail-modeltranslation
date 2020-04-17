@@ -5,6 +5,10 @@ import types
 
 from django.core.cache import cache
 from django.core.exceptions import ValidationError
+
+from wagtail_modeltranslation import settings
+from wagtail_modeltranslation.search import TranslatableSearchFieldWrapper
+
 try:
     from django.urls import reverse
 except ImportError:
@@ -22,7 +26,7 @@ from modeltranslation.utils import build_localized_fieldname, get_language
 try:
     from wagtail.contrib.routable_page.models import RoutablePageMixin
     from wagtail.admin.edit_handlers import FieldPanel, \
-        MultiFieldPanel, FieldRowPanel, InlinePanel, StreamFieldPanel, RichTextFieldPanel,\
+        MultiFieldPanel, FieldRowPanel, InlinePanel, StreamFieldPanel, RichTextFieldPanel, \
         extract_panel_definitions_from_model_class, ObjectList
     from wagtail.core.models import Page, Site
     from wagtail.core.fields import StreamField, StreamValue
@@ -34,7 +38,7 @@ try:
 except ImportError:
     from wagtail.contrib.wagtailroutablepage.models import RoutablePageMixin
     from wagtail.wagtailadmin.edit_handlers import FieldPanel, \
-        MultiFieldPanel, FieldRowPanel, InlinePanel, StreamFieldPanel, RichTextFieldPanel,\
+        MultiFieldPanel, FieldRowPanel, InlinePanel, StreamFieldPanel, RichTextFieldPanel, \
         extract_panel_definitions_from_model_class, ObjectList
     from wagtail.wagtailcore.models import Page, Site
     from wagtail.wagtailcore.fields import StreamField, StreamValue
@@ -108,6 +112,9 @@ class WagtailTranslator(object):
                 for language in mt_settings.AVAILABLE_LANGUAGES:
                     translated_field = copy.deepcopy(field)
                     translated_field.field_name = build_localized_fieldname(field.field_name, language)
+                    # Enable Language fallback for search fields, too
+                    if settings.ENABLE_FALLBACK_FOR_SEARCH_FIELDS:
+                        translated_field = TranslatableSearchFieldWrapper(translated_field)
                     model.search_fields = list(model.search_fields) + [translated_field]
 
         # OVERRIDE FIELDS
@@ -248,6 +255,7 @@ class WagtailTranslator(object):
         # patched, leaving the original untouched
         return panel
 
+
 # Overridden Page methods adapted to the translated fields
 
 
@@ -265,9 +273,9 @@ def _localized_set_url_path(page, parent, language):
         # for the current language. If the value for the current language is invalid we get the one
         # for the default fallback language
         slug = getattr(page, localized_slug_field, None) or \
-            getattr(page, default_localized_slug_field, None) or page.slug
+               getattr(page, default_localized_slug_field, None) or page.slug
         parent_url_path = getattr(parent, localized_url_path_field, None) or \
-            getattr(parent, default_localized_url_path_field, None) or parent.url_path
+                          getattr(parent, default_localized_url_path_field, None) or parent.url_path
 
         setattr(page, localized_url_path_field, parent_url_path + slug + '/')
 
@@ -396,13 +404,13 @@ def _localized_update_descendant_url_paths(page, old_url_path, new_url_path, lan
         cursor.execute(update_statement, [new_url_path, len(old_url_path) + 1, page.path + '%', page.id])
     else:
         (Page.objects
-            .rewrite(False)
-            .filter(path__startswith=page.path)
-            .exclude(**{localized_url_path: None})  # url_path_xx may not be set yet
-            .exclude(pk=page.pk)
-            .update(**{localized_url_path: Concat(
-                Value(new_url_path),
-                Substr(localized_url_path, len(old_url_path) + 1))}))
+         .rewrite(False)
+         .filter(path__startswith=page.path)
+         .exclude(**{localized_url_path: None})  # url_path_xx may not be set yet
+         .exclude(pk=page.pk)
+         .update(**{localized_url_path: Concat(
+            Value(new_url_path),
+            Substr(localized_url_path, len(old_url_path) + 1))}))
 
 
 def _localized_site_get_site_root_paths():
