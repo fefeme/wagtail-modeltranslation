@@ -13,7 +13,8 @@ RE_LANGUAGES = '|'.join(t[0].replace('-', '_') for t in settings.LANGUAGES)
 RE_LANGUAGE_MATCHER = re.compile(rf'_({RE_LANGUAGES})$')
 
 
-class TranslatableSearchFieldWrapper:
+# noinspection PyMissingConstructor
+class TranslatableSearchFieldWrapper(SearchField):
     """Wrapper class to enhance SearchFields get_value method
        to return the fallback value using django modeltranslations
        fallback logic.
@@ -24,14 +25,12 @@ class TranslatableSearchFieldWrapper:
 
     def get_value(self, obj):
         m = RE_LANGUAGE_MATCHER.search(self.field_name)
-        translation_activate(m.group(1))
+        language = m.group(1).replace('_', '-')
+        translation_activate(language)
         return self._search_field_instance.get_value(obj)
+
+    def get_field(self, cls):
+        return cls._meta.get_field(self.field_name)
 
     def __getattr__(self, item):
         return getattr(self._search_field_instance, item)
-
-    @classmethod
-    # We need to lie about who we are- this is for the
-    # ElasticSearch2Mapping (get_field_column_name)
-    def __instancecheck__(cls, instance):
-        return isinstance(instance, SearchField)
