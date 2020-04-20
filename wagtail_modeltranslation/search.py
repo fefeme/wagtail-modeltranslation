@@ -1,7 +1,8 @@
 import re
+from typing import Any
 
 from django.conf import settings
-from django.utils.translation import activate as translation_activate
+from django.utils.translation import activate as translation_activate, get_language
 
 try:
     from wagtail.search.index import SearchField
@@ -34,3 +35,4 @@ class TranslatableSearchFieldWrapper(SearchField):
 
     def __getattr__(self, item):
         return getattr(self._search_field_instance, item)
+

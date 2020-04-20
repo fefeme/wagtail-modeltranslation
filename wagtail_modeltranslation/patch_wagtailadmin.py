@@ -110,11 +110,14 @@ class WagtailTranslator(object):
                 # If it is we create a clone of the original SearchField to keep all the defined options
                 # and replace its name by the translated one
                 for language in mt_settings.AVAILABLE_LANGUAGES:
-                    translated_field = copy.deepcopy(field)
-                    translated_field.field_name = build_localized_fieldname(field.field_name, language)
+                    localized_field_name = build_localized_fieldname(field.field_name, language)
                     # Enable Language fallback for search fields, too
                     if settings.ENABLE_FALLBACK_FOR_SEARCH_FIELDS:
-                        translated_field = TranslatableSearchFieldWrapper(translated_field)
+                        translated_field = TranslatableSearchFieldWrapper(field)
+                    else:
+                        translated_field = copy.deepcopy(field)
+
+                    translated_field.field_name = localized_field_name
                     model.search_fields = list(model.search_fields) + [translated_field]
 
         # OVERRIDE FIELDS
