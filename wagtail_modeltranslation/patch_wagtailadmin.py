@@ -112,8 +112,8 @@ class WagtailTranslator(object):
                 for language in mt_settings.AVAILABLE_LANGUAGES:
                     localized_field_name = build_localized_fieldname(field.field_name, language)
                     # Enable Language fallback for search fields, too
-                    if settings.ENABLE_FALLBACK_FOR_SEARCH_FIELDS:
-                        translated_field = TranslatableSearchFieldWrapper(field)
+                    if settings.SEARCH_ENABLE_FALLBACK:
+                        translated_field = TranslatableSearchFieldWrapper(field, language)
                     else:
                         translated_field = copy.deepcopy(field)
 
