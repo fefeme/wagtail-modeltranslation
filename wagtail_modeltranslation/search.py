@@ -1,7 +1,3 @@
-import re
-from typing import Any
-
-from django.conf import settings
 from django.utils.translation import activate as trans_activate
 from django.utils.translation import deactivate as trans_deactivate
 
@@ -10,19 +6,6 @@ try:
 except ImportError:
     # noinspection PyUnresolvedReferences
     from wagtail.wagtailsearch.index import SearchField
-
-RE_LANGUAGES = '|'.join(t[0].replace('-', '_') for t in settings.LANGUAGES)
-RE_LANGUAGE_MATCHER = re.compile(rf'_({RE_LANGUAGES})$')
-
-ELASTIC_LANGUAGE_ANALYZERS = {
-    'en': 'english',
-    'fr': 'french',
-    'de': 'german',
-    'es': 'spanish',
-    'it': 'italian',
-    'ru': 'russian',
-    'pt': 'portuguese',
-}
 
 
 # noinspection PyMissingConstructor
